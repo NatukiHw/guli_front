@@ -7,8 +7,8 @@
 		</div>
 		<div class="sign-up-container">
 			<a-form :model="formData" name="formData" :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }" autocomplete="off">
-				<a-form-item label="邮箱" name="mobile">
-					<a-input v-model:value="formData.mobile" />
+				<a-form-item label="邮箱" name="username">
+					<a-input v-model:value="formData.username" />
 				</a-form-item>
 
 				<a-form-item label="密码" name="password">
@@ -16,7 +16,7 @@
 				</a-form-item>
 
 				<a-form-item :wrapper-col="{span: 24}">
-					<a-button type="primary">登录</a-button>
+					<a-button type="primary" @click="loginMember" :disabled="loginBtnDisabled">{{loginBtnText}}</a-button>
 				</a-form-item>
 			</a-form>
 			<!-- 更多登录方式 -->
@@ -35,16 +35,59 @@
 	import "~/assets/css/sign.css";
 	import "~/assets/css/iconfont.css";
 
+	import memberApi from "~/apis/member"
 	import { message } from 'ant-design-vue';
+
+	import cookies from "js-cookie";
 
 	export default {
 		layout: "sign",
 		data() {
 			return {
 				formData: {
-					mobile: "",
+					username: "",
 					password: ""
-				}
+				},
+				loginBtnDisabled: false
+			}
+		},
+		methods: {
+			loginMember() {
+				this.loginBtnDisabled = true;
+				memberApi.login(this.formData).then(resp => {
+					if(resp.success && resp.data.token) {
+						this.loginSuccess(resp.data.token);
+						message.success("登录成功");
+						window.location.href = "/";
+					} else {
+						message.error(resp.message);
+						this.loginBtnDisabled = false;
+					}
+				}).catch(e => {
+					this.loginBtnDisabled = false;
+				})
+			},
+			loginSuccess(token) {
+				cookies.set("guli_token", token);
+				this.loadMemberProfile();
+			},
+			loadMemberProfile() {
+				memberApi.getProfile().then(resp => {
+					if(resp.success && resp.data.profile) {
+						let profileJson = JSON.stringify(resp.data.profile);
+						cookies.set("guli_user", profileJson);
+					} else {
+						message.error("获取用户信息失败");
+					}
+				}).catch(e => {
+					message.error("获取用户信息失败");
+				})
+			}
+		},
+		computed: {
+			loginBtnText() {
+				if(this.loginBtnDisabled) return "正在登录";
+				return "登录";
 			}
 		}
 	}

@@ -1,6 +1,8 @@
 import axios from 'axios'
 import { message } from 'ant-design-vue';
 
+import cookie from  "js-cookie"
+
 const BASE_URL = "http://127.0.0.1:9020"
 
 const service = axios.create({
@@ -9,6 +11,10 @@ const service = axios.create({
 
 service.interceptors.request.use(
   config => {
+    let token = cookie.get("guli_token");
+    if(token) {
+      config.headers["authorization"] = token;
+    }
     return config
   },
   error => {
