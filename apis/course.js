@@ -19,5 +19,11 @@ export default {
 			url: `/educms/front/courses/${courseId}/chapters`,
 			method: "get"
 		})
+	},
+	isCoursePaid(courseId) {
+		return request({
+			url: `/payment/orders/courses/${courseId}`,
+			method: "get"
+		})
 	}
 }

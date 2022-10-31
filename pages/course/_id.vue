@@ -33,13 +33,16 @@
 								<a class="c-fff vam" title="收藏" href="#">收藏</a>
 							</span>
 						</section>
-						<section class="c-attr-mt">
+						<section class="c-attr-mt" v-if="!isPaid && courseDetail.price > 0">
+							<a href="#" title="立即购买" class="comm-btn c-btn-3" @click="createOrder">立即购买</a>
+						</section>
+						<section class="c-attr-mt" v-if="isPaid || courseDetail.price <= 0">
 							<a href="#" title="立即观看" class="comm-btn c-btn-3">立即观看</a>
 						</section>
 					</section>
 				</aside>
 				<aside class="thr-attr-box">
-					<ol class="thr-attr-ol clearfix">
+					<ol class="thr-attr-ol">
 						<li>
 							<p>&nbsp;</p>
 							<aside>
@@ -106,12 +109,12 @@
 														<ol class="lh-menu-ol" style="display: block;">
 															<li class="lh-menu-second ml30" v-for="video in chapter.children" :key="video.id">
 																<a :href="`/player/${video.id}`" :title="video.title" target="_blank">
-																	<span class="fr" v-if="video.isFree == 0">
+																	<span class="fr" v-if="courseDetail.price > 0 && video.isFree == 0">
 																		<i class="free-icon vam mr10">免费试听</i>
 																	</span>
 																	<em class="lh-menu-i-2 icon16 mr5">&nbsp;</em>{{video.title}}
 																</a>
-															</li>
+															</li> 
 														</ol>
 													</li>
 												</ul>
@@ -157,28 +160,53 @@
 	</div>
 </template>
 <script>
+	import { message } from 'ant-design-vue';
 	import courseApi from "~/apis/course"
+	import orderApi from "~/apis/order"
+	import cookie from  "js-cookie"
 
 	export default {
 		asyncData({ params }) {
 			return courseApi.getDetail(params.id).then(resp => {
 				if(resp.success) {
+					console.log(resp.data);
 					return {
 						courseId: params.id,
 						courseDetail: resp.data.course,
-						chapterList: []
+						chapterList: [],
+						isPaid: false
 					}
 				}
 			})
 		},
 		created() {
+			let token = cookie.get("guli_token");
 			this.loadChapterList();
+			if(token && this.courseDetail.price > 0) {
+				this.loadIsCoursePaid();
+			}
 		},
 		methods: {
 			loadChapterList() {
 				courseApi.getChapterList(this.courseId).then(resp => {
 					if(resp.success) {
 						this.chapterList = resp.data.chapters;
+					}
+				})
+			},
+			createOrder() {
+				orderApi.createOrder(this.courseId).then(resp => {
+					if(resp.success && resp.data.orderNo) {
+						message.success("订单创建成功");
+						let orderNo = resp.data.orderNo;
+						this.$router.push(`/payment/${orderNo}`);
+					}
+				})
+			},
+			loadIsCoursePaid() {
+				courseApi.isCoursePaid(this.courseId).then(resp => {
+					if(resp.success) {
+						this.isPaid = resp.data.isPaid;
 					}
 				})
 			}

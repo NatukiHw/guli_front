@@ -45,8 +45,8 @@
 		data() {
 			return {
 				formData: {
-					username: "",
-					password: ""
+					username: "reg@natuki.cc",
+					password: "123456"
 				},
 				loginBtnDisabled: false
 			}
@@ -57,8 +57,6 @@
 				memberApi.login(this.formData).then(resp => {
 					if(resp.success && resp.data.token) {
 						this.loginSuccess(resp.data.token);
-						message.success("登录成功");
-						window.location.href = "/";
 					} else {
 						message.error(resp.message);
 						this.loginBtnDisabled = false;
@@ -76,10 +74,13 @@
 					if(resp.success && resp.data.profile) {
 						let profileJson = JSON.stringify(resp.data.profile);
 						cookies.set("guli_user", profileJson);
+						message.success("登录成功");
+						window.location.href = "/";
 					} else {
 						message.error("获取用户信息失败");
 					}
 				}).catch(e => {
+					console.log(e);
 					message.error("获取用户信息失败");
 				})
 			}
